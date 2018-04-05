@@ -41,11 +41,11 @@
     "uglify-js": "^3.3.16"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-free-webfonts": "^1.0.5",
+    "bootstrap": "^4.0.0",
     "bootstrap-markdown": "^2.10.0",
-    "bootstrap-sass": "^3.3.7",
-    "font-awesome": "^4.7.0",
     "jquery": "^3.3.1",
-    "jquery-textcomplete": "^1.8.4",
-    "marked": "^0.3.19"
+    "marked": "^0.3.19",
+    "textcomplete": "^0.17.1"
   }
 }

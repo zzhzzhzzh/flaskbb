@@ -1,2 +1,1 @@
-cp node_modules/font-awesome/fonts/* static/fonts/ && \
-cp -r node_modules/bootstrap-sass/assets/fonts/bootstrap static/fonts/
+cp node_modules/@fortawesome/fontawesome-free-webfonts/webfonts/* static/fonts/ && \

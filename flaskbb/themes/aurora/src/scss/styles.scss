@@ -1,11 +1,11 @@
 // Import custom Bootstrap variables
-@import "bootstrap-variables";
+//@import "bootstrap-variables";
 
 // Import Bootstrap for Sass
-@import "node_modules/bootstrap-sass/assets/stylesheets/bootstrap";
+@import "node_modules/bootstrap/scss/bootstrap";
 
 // Import fontawesome icons
-@import "node_modules/font-awesome/scss/font-awesome";
+@import "node_modules/@fortawesome/fontawesome-free-webfonts/scss/fontawesome";
 
 // Import FlaskBB theme
 @import "aurora";
