@@ -1,6 +1,6 @@
 // forum specific values
 .forum-panel {
-    @include panel-variant($panel-border, $gray, $panel-head-bg, $panel-border);
+    //@include panel-variant($panel-border, $gray, $panel-head-bg, $panel-border);
     margin-bottom: 0;
 
     .panel-heading {

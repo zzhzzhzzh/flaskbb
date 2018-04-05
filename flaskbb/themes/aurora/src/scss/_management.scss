@@ -1,6 +1,6 @@
 // Management Panel
 .management-panel {
-    @include panel-variant($panel-border, $gray, $panel-head-bg, $panel-border);
+    //@include panel-variant($panel-border, $gray, $panel-head-bg, $panel-border);
 
     .search-form {
         display: none;
