@@ -40,7 +40,7 @@
     </head>
 
     <body>
-
+    {%- from theme("macros.html") import is_active, topnav with context -%}
         <!-- main forum layout -->
         <div class="flaskbb-layout">
             <div class="container">
@@ -57,84 +57,78 @@
 
                 <!-- forum menu - contains all the navigation items -->
                 {% block navigation %}
-                <div class="navbar navbar-default" role="navigation">
-                    <!-- Brand and toggle get grouped for better mobile display -->
-                    <div class="navbar-header">
-                      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-collapse" aria-expanded="false">
-                        <span class="sr-only">Toggle navigation</span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                        <span class="icon-bar"></span>
-                      </button>
-                    </div>
+                <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+                  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent">
+                    <span class="navbar-toggler-icon"></span>
+                  </button>
 
-                    <div class="collapse navbar-collapse" id="navbar-collapse">
-                        <!-- navbar left -->
-                        <ul class="nav navbar-nav forum-nav">
-                            {%- from theme("macros.html") import is_active, topnav with context -%}
+                  <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav mr-auto">
+                        {{ run_hook("flaskbb_tpl_navigation_before") }}
+                        {{ topnav(endpoint='forum.index', name=_('Forum'), icon='fas fa-comment', active=active_forum_nav) }}
+                        {{ topnav(endpoint='forum.memberlist', name=_('Memberlist'), icon='fas fa-user') }}
+                        {{ topnav(endpoint='forum.search', name=_('Search'), icon='fas fa-search') }}
+                        {{ run_hook("flaskbb_tpl_navigation_after") }}
+                    </ul>
 
-                            {{ run_hook("flaskbb_tpl_navigation_before") }}
-                            {{ topnav(endpoint='forum.index', name=_('Forum'), icon='fa fa-comment', active=active_forum_nav) }}
-                            {{ topnav(endpoint='forum.memberlist', name=_('Memberlist'), icon='fa fa-user') }}
-                            {{ topnav(endpoint='forum.search', name=_('Search'), icon='fa fa-search') }}
-                            {{ run_hook("flaskbb_tpl_navigation_after") }}
-                        </ul>
+                    {% if current_user and current_user.is_authenticated %}
+                    {{ run_hook("flaskbb_tpl_user_nav_loggedin_before") }}
 
-                        <!-- navbar right -->
-                        <ul class="nav navbar-nav navbar-right">
-                            {% if current_user and current_user.is_authenticated %}
+                    <ul class="navbar-nav">
+                      <li class="nav-item dropdown">
+                        <div class="btn-group" role="group">
+                          <a class="btn btn-primary" href="{{ url_for('user.profile', username=current_user.username) }}">
+                            <span class="fa fa-user fa-fw"></span> {{ current_user.username }}
+                          </a>
 
-                            {{ run_hook("flaskbb_tpl_user_nav_loggedin_before") }}
+                          <div class="btn-group" role="group">
+                            <button id="btnGroupDrop1" type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+                            </button>
+                            <div class="dropdown-menu">
+                                <a class="dropdown-item" href="{{ url_for('forum.topictracker') }}"><span class="fa fa-book fa-fw"></span> {% trans %}Topic Tracker{% endtrans %}</a>
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="{{ url_for('user.settings') }}"><span class="fa fa-cogs fa-fw"></span> {% trans %}Settings{% endtrans %}</a>
+                                {% if current_user|is_admin_or_moderator %}
+                                <a class="dropdown-item" href="{{ url_for('management.overview') }}"><span class="fa fa-cog fa-fw"></span> {% trans %}Management{% endtrans %}</a>
+                                <div class="dropdown-divider"></div>
+                                {% endif %}
+                                <a class="dropdown-item" href="{{ url_for('auth.logout') }}"><span class="fa fa-power-off fa-fw"></span> {% trans %}Logout{% endtrans %}</a>
+                            </div>
+                          </div>
+                        </div>
+                      </li>
+                    </ul>
 
-                            <!-- User Menu -->
-                            <li>
-                                <div class="btn-group navbar-btn user-btn">
-                                    <a class="btn btn-primary" href="{{ url_for('user.profile', username=current_user.username) }}">
-                                        <span class="fa fa-user fa-fw"></span> {{ current_user.username }}
-                                    </a>
-                                    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
-                                    <ul class="dropdown-menu" role="menu">
-                                        <li><a href="{{ url_for('forum.topictracker') }}"><span class="fa fa-book fa-fw"></span> {% trans %}Topic Tracker{% endtrans %}</a></li>
-                                        <li class="divider"></li>
+                  {{ run_hook("flaskbb_tpl_user_nav_loggedin_after") }}
+                  {% else %}
+                    <ul class="navbar-nav">
+                      <li class="nav-item dropdown">
+                        <div class="btn-group" role="group">
+                          <a class="btn btn-primary" href="{{ url_for('auth.login') }}">
+                            <span class="fa fa-user fa-fw"></span> {% trans %}Login{% endtrans %}
+                          </a>
 
-                                        <li><a href="{{ url_for('user.settings') }}"><span class="fa fa-cogs fa-fw"></span> {% trans %}Settings{% endtrans %}</a></li>
-                                        {% if current_user|is_admin_or_moderator %}
-                                        <li><a href="{{ url_for('management.overview') }}"><span class="fa fa-cog fa-fw"></span> {% trans %}Management{% endtrans %}</a></li>
-                                        <li class="divider"></li>
-                                        {% endif %}
+                          <div class="btn-group" role="group">
+                            <button id="btnGroupDrop1" type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+                            </button>
+                            <div class="dropdown-menu">
+                                {# MAYBE(anr): Move this into a hook?? #}
+                                {% if flaskbb_config["REGISTRATION_ENABLED"] %}
+                                <a class="dropdown-item" href="{{ url_for('auth.register') }}"><span class="fa fa-user-plus fa-fw"></span> {% trans %}Register{% endtrans %}</a></li>
+                                {% endif %}
+                                <a class="dropdown-item" href="{{ url_for('auth.forgot_password') }}"><span class="fa fa-undo fa-fw"></span> {% trans %}Reset Password{% endtrans %}</a></li>
+                                {% if flaskbb_config["ACTIVATE_ACCOUNT"] %}
+                                <a class="dropdown-item" href="{{ url_for('auth.request_activation_token') }}"><span class="fa fa-fw fa-ticket"></span> {% trans %}Activate Account{% endtrans %}</a></li>
+                                {% endif %}
+                            </div>
+                          </div>
+                        </div>
+                      </li>
+                    </ul>
+                  {% endif %}
+                  </div>
+                </nav>
 
-                                        <li><a href="{{ url_for('auth.logout') }}"><span class="fa fa-power-off fa-fw"></span> {% trans %}Logout{% endtrans %}</a></li>
-                                    </ul>
-                                </div>
-                            </li>
-
-                            {{ run_hook("flaskbb_tpl_user_nav_loggedin_after") }}
-
-                            {% else %}
-                            <!-- Not logged in - Login/Register -->
-                            <li>
-                                <div class="btn-group navbar-btn user-btn">
-                                    <a class="btn btn-primary" href="{{ url_for('auth.login') }}">
-                                        <span class="fa fa-user fa-fw"></span> {% trans %}Login{% endtrans %}
-                                    </a>
-                                    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
-                                    <ul class="dropdown-menu" role="menu">
-                                        {# MAYBE(anr): Move this into a hook?? #}
-                                        {% if flaskbb_config["REGISTRATION_ENABLED"] %}
-                                        <li><a href="{{ url_for('auth.register') }}"><span class="fa fa-user-plus fa-fw"></span> {% trans %}Register{% endtrans %}</a></li>
-                                        {% endif %}
-                                        <li><a href="{{ url_for('auth.forgot_password') }}"><span class="fa fa-undo fa-fw"></span> {% trans %}Reset Password{% endtrans %}</a></li>
-                                        {% if flaskbb_config["ACTIVATE_ACCOUNT"] %}
-                                        <li><a href="{{ url_for('auth.request_activation_token') }}"><span class="fa fa-fw fa-ticket"></span> {% trans %}Activate Account{% endtrans %}</a></li>
-                                        {% endif %}
-                                    </ul>
-                                </div>
-                            </li>
-                            {% endif %}
-
-                        </ul> <!-- end navbar right -->
-                    </div> <!-- end navbar-collapse -->
-                </div> <!-- end navbar -->
                 {% endblock %}
 
                 <!-- Place for all the (flashed) messages -->

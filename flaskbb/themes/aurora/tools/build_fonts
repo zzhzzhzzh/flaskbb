@@ -1,1 +1,1 @@
-cp node_modules/@fortawesome/fontawesome-free-webfonts/webfonts/* static/fonts/ && \
+cp node_modules/@fortawesome/fontawesome-free-webfonts/webfonts/* static/fonts/

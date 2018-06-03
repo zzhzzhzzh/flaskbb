@@ -295,12 +295,13 @@
 
 
 {% macro topnav(endpoint, name, icon='', id='', active=False) %}
-<li {% if id %}id={{id}}{% endif %} {% if endpoint == request.endpoint or active == True %}class="active"{% endif %}>
-    <a href={{ url_for(endpoint) }}>
-        {% if icon %}<i class="{{ icon }}"></i> {% endif %}{{ name }}
+<li {% if id %}id={{id}}{% endif %} class="nav-item{%- if endpoint == request.endpoint or active == True -%} active{%- endif -%}">
+    <a class="nav-link" href="{{ url_for(endpoint) }}">
+        {% if icon %}<span class="{{ icon }}"></span> {% endif %}{{ name }}
     </a>
 </li>
 {% endmacro %}
+
 
 {% macro is_active(endpoint, active=False) %}
     {%- if endpoint == request.endpoint or active == True -%}
