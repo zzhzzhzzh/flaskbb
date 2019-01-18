@@ -9,12 +9,11 @@
     :license: BSD, see LICENSE for more details
 """
 
-from abc import abstractproperty
+from abc import ABC, abstractproperty
 from enum import Enum
 
 import attr
 
-from .._compat import ABC
 
 __all__ = (
     "NavigationContentType",
@@ -41,6 +40,7 @@ class NavigationItem(ABC):
     Abstract NavigationItem class. Not meant for use but provides the common
     interface for navigation items.
     """
+
     content_type = abstractproperty(lambda: None)
 
 
@@ -77,6 +77,7 @@ class NavigationExternalLink(NavigationItem):
             icon="fa fa-at"
         )
     """
+
     uri = attr.ib()
     name = attr.ib()
     icon = attr.ib(default="")

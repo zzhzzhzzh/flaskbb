@@ -22,8 +22,6 @@ from sqlalchemy import event
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import OperationalError, ProgrammingError
 
-from flaskbb._compat import iteritems, string_types
-
 # extensions
 from flaskbb.extensions import (
     alembic,
@@ -96,10 +94,11 @@ from flaskbb.utils.translations import FlaskBBDomain
 from . import markup  # noqa
 from .auth import views as auth_views  # noqa
 from .deprecation import FlaskBBDeprecation
+from .display.navigation import NavigationContentType
 from .forum import views as forum_views  # noqa
 from .management import views as management_views  # noqa
 from .user import views as user_views  # noqa
-from .display.navigation import NavigationContentType
+
 
 logger = logging.getLogger(__name__)
 
@@ -149,7 +148,7 @@ def configure_app(app, config):
     app.config.from_object("flaskbb.configs.default.DefaultConfig")
     config = get_flaskbb_config(app, config)
     # Path
-    if isinstance(config, string_types):
+    if isinstance(config, str):
         app.config.from_pyfile(config)
     # Module
     else:
@@ -170,7 +169,7 @@ def configure_app(app, config):
     # Setting up logging as early as possible
     configure_logging(app)
 
-    if not isinstance(config, string_types) and config is not None:
+    if not isinstance(config, str) and config is not None:
         config_name = "{}.{}".format(config.__module__, config.__name__)
     else:
         config_name = config
@@ -183,23 +182,26 @@ def configure_app(app, config):
     if not app.testing:  # pragma: no branch
         warnings.simplefilter(deprecation_level, FlaskBBDeprecation)
 
-    debug_panels = app.config.setdefault('DEBUG_TB_PANELS', [
-        'flask_debugtoolbar.panels.versions.VersionDebugPanel',
-        'flask_debugtoolbar.panels.timer.TimerDebugPanel',
-        'flask_debugtoolbar.panels.headers.HeaderDebugPanel',
-        'flask_debugtoolbar.panels.request_vars.RequestVarsDebugPanel',
-        'flask_debugtoolbar.panels.config_vars.ConfigVarsDebugPanel',
-        'flask_debugtoolbar.panels.template.TemplateDebugPanel',
-        'flask_debugtoolbar.panels.sqlalchemy.SQLAlchemyDebugPanel',
-        'flask_debugtoolbar.panels.logger.LoggingPanel',
-        'flask_debugtoolbar.panels.route_list.RouteListDebugPanel',
-        'flask_debugtoolbar.panels.profiler.ProfilerDebugPanel',
-    ])
+    debug_panels = app.config.setdefault(
+        "DEBUG_TB_PANELS",
+        [
+            "flask_debugtoolbar.panels.versions.VersionDebugPanel",
+            "flask_debugtoolbar.panels.timer.TimerDebugPanel",
+            "flask_debugtoolbar.panels.headers.HeaderDebugPanel",
+            "flask_debugtoolbar.panels.request_vars.RequestVarsDebugPanel",
+            "flask_debugtoolbar.panels.config_vars.ConfigVarsDebugPanel",
+            "flask_debugtoolbar.panels.template.TemplateDebugPanel",
+            "flask_debugtoolbar.panels.sqlalchemy.SQLAlchemyDebugPanel",
+            "flask_debugtoolbar.panels.logger.LoggingPanel",
+            "flask_debugtoolbar.panels.route_list.RouteListDebugPanel",
+            "flask_debugtoolbar.panels.profiler.ProfilerDebugPanel",
+        ],
+    )
 
-    if all('WarningsPanel' not in p for p in debug_panels):
-        debug_panels.append('flask_debugtoolbar_warnings.WarningsPanel')
+    if all("WarningsPanel" not in p for p in debug_panels):
+        debug_panels.append("flask_debugtoolbar_warnings.WarningsPanel")
 
-    app.pluggy = FlaskBBPluginManager("flaskbb", implprefix="flaskbb_")
+    app.pluggy = FlaskBBPluginManager("flaskbb")
 
 
 def configure_celery_app(app, celery):
@@ -210,7 +212,6 @@ def configure_celery_app(app, celery):
     TaskBase = celery.Task
 
     class ContextTask(TaskBase):
-
         def __call__(self, *args, **kwargs):
             with app.app_context():
                 return TaskBase.__call__(self, *args, **kwargs)
@@ -475,7 +476,7 @@ def load_plugins(app):
     # ('None' - appears on py2) and thus using a set
     flaskbb_modules = set(
         module
-        for name, module in iteritems(sys.modules)
+        for name, module in sys.modules.items()
         if name.startswith("flaskbb")
     )
     for module in flaskbb_modules:
@@ -526,7 +527,7 @@ def load_plugins(app):
     disabled_plugins = [
         p.__package__ for p in app.pluggy.get_disabled_plugins()
     ]
-    for task_name, task in iteritems(tasks):
+    for task_name, task in tasks.items():
         if task.__module__.split(".")[0] in disabled_plugins:
             logger.debug("Unregistering task: '{}'".format(task))
             celery.tasks.unregister(task_name)

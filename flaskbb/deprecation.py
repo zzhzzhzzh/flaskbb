@@ -11,12 +11,10 @@
 
 import inspect
 import warnings
-from abc import abstractproperty
+from abc import ABC, abstractproperty
 from functools import wraps
 
 from flask_babelplus import gettext as _
-
-from ._compat import ABC
 
 
 class FlaskBBWarning(Warning):

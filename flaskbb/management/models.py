@@ -10,10 +10,10 @@
 """
 import logging
 
-from flaskbb._compat import iteritems
 from flaskbb.extensions import cache, db
 from flaskbb.utils.database import CRUDMixin
 from flaskbb.utils.forms import SettingValueType, generate_settings_form
+
 
 logger = logging.getLogger(__name__)
 
@@ -24,8 +24,9 @@ class SettingsGroup(db.Model, CRUDMixin):
     key = db.Column(db.String(255), primary_key=True)
     name = db.Column(db.String(255), nullable=False)
     description = db.Column(db.Text, nullable=False)
-    settings = db.relationship("Setting", lazy="dynamic", backref="group",
-                               cascade="all, delete-orphan")
+    settings = db.relationship(
+        "Setting", lazy="dynamic", backref="group", cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         return "<{} {}>".format(self.__class__.__name__, self.key)
@@ -36,10 +37,11 @@ class Setting(db.Model, CRUDMixin):
 
     key = db.Column(db.String(255), primary_key=True)
     value = db.Column(db.PickleType, nullable=False)
-    settingsgroup = db.Column(db.String(255),
-                              db.ForeignKey('settingsgroup.key',
-                                            ondelete="CASCADE"),
-                              nullable=False)
+    settingsgroup = db.Column(
+        db.String(255),
+        db.ForeignKey("settingsgroup.key", ondelete="CASCADE"),
+        nullable=False,
+    )
 
     # The name (displayed in the form)
     name = db.Column(db.String(200), nullable=False)
@@ -75,7 +77,7 @@ class Setting(db.Model, CRUDMixin):
         :param settings: A dictionary with setting items.
         """
         # update the database
-        for key, value in iteritems(settings):
+        for key, value in settings.items():
             setting = cls.query.filter(Setting.key == key.lower()).first()
 
             setting.value = value
@@ -119,8 +121,9 @@ class Setting(db.Model, CRUDMixin):
         settings = {}
         result = None
         if from_group is not None:
-            result = SettingsGroup.query.filter_by(key=from_group).\
-                first_or_404()
+            result = SettingsGroup.query.filter_by(
+                key=from_group
+            ).first_or_404()
             result = result.settings
         else:
             result = cls.query.all()

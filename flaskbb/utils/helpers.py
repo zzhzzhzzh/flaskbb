@@ -12,37 +12,37 @@ import ast
 import itertools
 import logging
 import operator
-import warnings
 import os
 import re
 import time
+import warnings
 from datetime import datetime, timedelta
 from email import message_from_string
 from functools import wraps
 
-from pkg_resources import get_distribution
-
 import requests
 import unidecode
 from babel.core import get_locale_identifier
-from babel.dates import (
-    format_timedelta as babel_format_timedelta,
-    format_datetime as babel_format_datetime,
-    format_date as babel_format_date)
-from werkzeug.utils import import_string, ImportStringError
+from babel.dates import format_date as babel_format_date
+from babel.dates import format_datetime as babel_format_datetime
+from babel.dates import format_timedelta as babel_format_timedelta
 from flask import flash, g, redirect, request, session, url_for
 from flask_allows import Permission
 from flask_babelplus import lazy_gettext as _
 from flask_login import current_user
 from flask_themes2 import get_themes_list, render_theme_template
-from flaskbb._compat import (iteritems, range_method, text_type, string_types,
-                             to_bytes, to_unicode)
-from flaskbb.extensions import babel, redis_store
-from flaskbb.utils.settings import flaskbb_config
 from jinja2 import Markup
 from PIL import ImageFile
+from pkg_resources import get_distribution
 from pytz import UTC
 from werkzeug.local import LocalProxy
+from werkzeug.utils import ImportStringError, import_string
+
+from flaskbb.extensions import babel, redis_store
+from flaskbb.utils.settings import flaskbb_config
+
+
+logger = logging.getLogger(__name__)
 
 
 try:  # compat
@@ -50,12 +50,25 @@ try:  # compat
 except NameError:
     FileNotFoundError = IOError
 
-logger = logging.getLogger(__name__)
+
+def to_bytes(text, encoding="utf-8"):
+    """Transform string to bytes."""
+    if isinstance(text, str):
+        text = text.encode(encoding)
+    return text
+
+
+def to_unicode(input_bytes, encoding="utf-8"):
+    """Decodes input_bytes to text if needed."""
+    if not isinstance(input_bytes, str):
+        input_bytes = input_bytes.decode(encoding)
+    return input_bytes
+
 
 _punct_re = re.compile(r'[\t !"#$%&\'()*\-/<=>?@\[\\\]^_`{|},.]+')
 
 
-def slugify(text, delim=u'-'):
+def slugify(text, delim=u"-"):
     """Generates an slightly worse ASCII-only slug.
     Taken from the Flask Snippets page.
 
@@ -67,7 +80,7 @@ def slugify(text, delim=u'-'):
     for word in _punct_re.split(text.lower()):
         if word:
             result.append(word)
-    return text_type(delim.join(result))
+    return str(delim.join(result))
 
 
 def redirect_or_next(endpoint, **kwargs):
@@ -76,9 +89,7 @@ def redirect_or_next(endpoint, **kwargs):
 
     :param endpoint: The fallback endpoint.
     """
-    return redirect(
-        request.args.get('next') or endpoint, **kwargs
-    )
+    return redirect(request.args.get("next") or endpoint, **kwargs)
 
 
 def render_template(template, **context):  # pragma: no cover
@@ -88,7 +99,7 @@ def render_template(template, **context):  # pragma: no cover
     if current_user.is_authenticated and current_user.theme:
         theme = current_user.theme
     else:
-        theme = session.get('theme', flaskbb_config['DEFAULT_THEME'])
+        theme = session.get("theme", flaskbb_config["DEFAULT_THEME"])
     return render_theme_template(theme, template, **context)
 
 
@@ -107,18 +118,21 @@ def do_topic_action(topics, user, action, reverse):  # noqa: C901
     if not topics:
         return False
 
-    from flaskbb.utils.requirements import (IsAtleastModeratorInForum,
-                                            CanDeleteTopic, Has)
+    from flaskbb.utils.requirements import (
+        IsAtleastModeratorInForum,
+        CanDeleteTopic,
+        Has,
+    )
 
     if not Permission(IsAtleastModeratorInForum(forum=topics[0].forum)):
         flash(
             _("You do not have the permissions to execute this action."),
-            "danger"
+            "danger",
         )
         return False
 
     modified_topics = 0
-    if action not in {'delete', 'hide', 'unhide'}:
+    if action not in {"delete", "hide", "unhide"}:
         for topic in topics:
             if getattr(topic, action) and not reverse:
                 continue
@@ -131,7 +145,7 @@ def do_topic_action(topics, user, action, reverse):  # noqa: C901
         if not Permission(CanDeleteTopic):
             flash(
                 _("You do not have the permissions to delete these topics."),
-                "danger"
+                "danger",
             )
             return False
 
@@ -139,11 +153,11 @@ def do_topic_action(topics, user, action, reverse):  # noqa: C901
             modified_topics += 1
             topic.delete()
 
-    elif action == 'hide':
-        if not Permission(Has('makehidden')):
+    elif action == "hide":
+        if not Permission(Has("makehidden")):
             flash(
                 _("You do not have the permissions to hide these topics."),
-                "danger"
+                "danger",
             )
             return False
 
@@ -153,11 +167,11 @@ def do_topic_action(topics, user, action, reverse):  # noqa: C901
             modified_topics += 1
             topic.hide(user)
 
-    elif action == 'unhide':
-        if not Permission(Has('makehidden')):
+    elif action == "unhide":
+        if not Permission(Has("makehidden")):
             flash(
                 _("You do not have the permissions to unhide these topics."),
-                "danger"
+                "danger",
             )
             return False
 
@@ -256,7 +270,8 @@ def forum_is_unread(forum, forumsread, user):
         return False
 
     read_cutoff = time_utcnow() - timedelta(
-        days=flaskbb_config["TRACKER_LENGTH"])
+        days=flaskbb_config["TRACKER_LENGTH"]
+    )
 
     # disable tracker if TRACKER_LENGTH is set to 0
     if flaskbb_config["TRACKER_LENGTH"] == 0:
@@ -307,7 +322,8 @@ def topic_is_unread(topic, topicsread, user, forumsread=None):
         return False
 
     read_cutoff = time_utcnow() - timedelta(
-        days=flaskbb_config["TRACKER_LENGTH"])
+        days=flaskbb_config["TRACKER_LENGTH"]
+    )
 
     # disable tracker if read_cutoff is set to 0
     if flaskbb_config["TRACKER_LENGTH"] == 0:
@@ -344,13 +360,13 @@ def mark_online(user_id, guest=False):  # pragma: no cover
     """
     user_id = to_bytes(user_id)
     now = int(time.time())
-    expires = now + (flaskbb_config['ONLINE_LAST_MINUTES'] * 60) + 10
+    expires = now + (flaskbb_config["ONLINE_LAST_MINUTES"] * 60) + 10
     if guest:
-        all_users_key = 'online-guests/%d' % (now // 60)
-        user_key = 'guest-activity/%s' % user_id
+        all_users_key = "online-guests/%d" % (now // 60)
+        user_key = "guest-activity/%s" % user_id
     else:
-        all_users_key = 'online-users/%d' % (now // 60)
-        user_key = 'user-activity/%s' % user_id
+        all_users_key = "online-users/%d" % (now // 60)
+        user_key = "user-activity/%s" % user_id
     p = redis_store.pipeline()
     p.sadd(all_users_key, user_id)
     p.set(user_key, now)
@@ -365,13 +381,15 @@ def get_online_users(guest=False):  # pragma: no cover
     :param guest: If True, it will return the online guests
     """
     current = int(time.time()) // 60
-    minutes = range_method(flaskbb_config['ONLINE_LAST_MINUTES'])
+    minutes = range(flaskbb_config["ONLINE_LAST_MINUTES"])
     if guest:
-        users = redis_store.sunion(['online-guests/%d' % (current - x)
-                                    for x in minutes])
+        users = redis_store.sunion(
+            ["online-guests/%d" % (current - x) for x in minutes]
+        )
     else:
-        users = redis_store.sunion(['online-users/%d' % (current - x)
-                                    for x in minutes])
+        users = redis_store.sunion(
+            ["online-users/%d" % (current - x) for x in minutes]
+        )
 
     return [to_unicode(u) for u in users]
 
@@ -384,12 +402,12 @@ def crop_title(title, length=None, suffix="..."):
     :param suffix: The suffix which should be appended at the
                    end of the title.
     """
-    length = flaskbb_config['TITLE_LENGTH'] if length is None else length
+    length = flaskbb_config["TITLE_LENGTH"] if length is None else length
 
     if len(title) <= length:
         return title
 
-    return title[:length].rsplit(' ', 1)[0] + suffix
+    return title[:length].rsplit(" ", 1)[0] + suffix
 
 
 def is_online(user):
@@ -411,7 +429,7 @@ def time_diff():
     variable from the configuration.
     """
     now = time_utcnow()
-    diff = now - timedelta(minutes=flaskbb_config['ONLINE_LAST_MINUTES'])
+    diff = now - timedelta(minutes=flaskbb_config["ONLINE_LAST_MINUTES"])
     return diff
 
 
@@ -423,25 +441,24 @@ def _get_user_locale():
 
 
 def _format_html_time_tag(datetime, what_to_display):
-    if what_to_display == 'date-only':
+    if what_to_display == "date-only":
         content = babel_format_date(datetime, locale=_get_user_locale())
-    elif what_to_display == 'date-and-time':
+    elif what_to_display == "date-and-time":
         content = babel_format_datetime(
-            datetime,
-            tzinfo=UTC,
-            locale=_get_user_locale()
+            datetime, tzinfo=UTC, locale=_get_user_locale()
         )
         # While this could be done with a format string, that would
         # hinder internationalization and honestly why bother.
-        content += ' UTC'
+        content += " UTC"
     else:
-        raise ValueError('what_to_display argument invalid')
+        raise ValueError("what_to_display argument invalid")
 
     isoformat = datetime.isoformat()
 
     return Markup(
-        '<time datetime="{}" data-what_to_display="{}">{}</time>'
-        .format(isoformat, what_to_display, content)
+        '<time datetime="{}" data-what_to_display="{}">{}</time>'.format(
+            isoformat, what_to_display, content
+        )
     )
 
 
@@ -451,7 +468,7 @@ def format_datetime(datetime):
     :param value: The datetime object that should be formatted
     :rtype: Markup
     """
-    return _format_html_time_tag(datetime, 'date-and-time')
+    return _format_html_time_tag(datetime, "date-and-time")
 
 
 def format_date(datetime, format=None):
@@ -462,14 +479,14 @@ def format_date(datetime, format=None):
     """
     if format:
         warnings.warn(
-            'This API has been deprecated due to i18n concerns.  Please use  '
-            'Jinja filters format_datetime and format_date without arguments '
-            'to format complete and date-only timestamps respectively.',
-            DeprecationWarning
+            "This API has been deprecated due to i18n concerns.  Please use  "
+            "Jinja filters format_datetime and format_date without arguments "
+            "to format complete and date-only timestamps respectively.",
+            DeprecationWarning,
         )
-        if '%H' in format:
+        if "%H" in format:
             return format_datetime(datetime)
-    return _format_html_time_tag(datetime, 'date-only')
+    return _format_html_time_tag(datetime, "date-only")
 
 
 def format_timedelta(delta, **kwargs):
@@ -495,10 +512,11 @@ def format_quote(username, content):
     :param username: The username of a user.
     :param content: The content of the quote
     """
-    profile_url = url_for('user.profile', username=username)
-    content = "\n> ".join(content.strip().split('\n'))
-    quote = u"**[{username}]({profile_url}) wrote:**\n> {content}\n".\
-            format(username=username, profile_url=profile_url, content=content)
+    profile_url = url_for("user.profile", username=username)
+    content = "\n> ".join(content.strip().split("\n"))
+    quote = u"**[{username}]({profile_url}) wrote:**\n> {content}\n".format(
+        username=username, profile_url=profile_url, content=content
+    )
 
     return quote
 
@@ -517,7 +535,7 @@ def get_image_info(url):
         "content_type": "",
         "size": image_size,
         "width": 0,
-        "height": 0
+        "height": 0,
     }
 
     # lets set a hard limit of 10MB
@@ -563,8 +581,7 @@ def check_image(url):
 
     if not img_info["content_type"] in flaskbb_config["AVATAR_TYPES"]:
         error = "Image type {} is not allowed. Allowed types are: {}".format(
-            img_info["content_type"],
-            ", ".join(flaskbb_config["AVATAR_TYPES"])
+            img_info["content_type"], ", ".join(flaskbb_config["AVATAR_TYPES"])
         )
         return error, False
 
@@ -589,8 +606,7 @@ def get_alembic_locations(plugin_dirs):
     the unique identifier of the plugin.
     """
     branches_dirs = [
-        tuple([os.path.basename(os.path.dirname(p)), p])
-        for p in plugin_dirs
+        tuple([os.path.basename(os.path.dirname(p)), p]) for p in plugin_dirs
     ]
 
     return branches_dirs
@@ -633,9 +649,9 @@ def app_config_from_env(app, prefix="FLASKBB_"):
     :param app: The application object.
     :param prefix: The prefix of the environment variables.
     """
-    for key, value in iteritems(os.environ):
+    for key, value in os.environ.items():
         if key.startswith(prefix):
-            key = key[len(prefix):]
+            key = key[len(prefix) :]
             try:
                 value = ast.literal_eval(value)
             except (ValueError, SyntaxError):
@@ -658,7 +674,7 @@ def get_flaskbb_config(app, config_file):
     """
     if config_file is not None:
         # config is an object
-        if not isinstance(config_file, string_types):
+        if not isinstance(config_file, str):
             return config_file
 
         # config is a file
@@ -724,24 +740,26 @@ class ReverseProxyPathFix(object):
         self.force_https = force_https
 
     def __call__(self, environ, start_response):
-        script_name = environ.get('HTTP_X_SCRIPT_NAME', '')
+        script_name = environ.get("HTTP_X_SCRIPT_NAME", "")
         if script_name:
-            environ['SCRIPT_NAME'] = script_name
-            path_info = environ.get('PATH_INFO', '')
+            environ["SCRIPT_NAME"] = script_name
+            path_info = environ.get("PATH_INFO", "")
             if path_info and path_info.startswith(script_name):
-                environ['PATH_INFO'] = path_info[len(script_name):]
-        server = environ.get('HTTP_X_FORWARDED_SERVER_CUSTOM',
-                             environ.get('HTTP_X_FORWARDED_SERVER', ''))
+                environ["PATH_INFO"] = path_info[len(script_name) :]
+        server = environ.get(
+            "HTTP_X_FORWARDED_SERVER_CUSTOM",
+            environ.get("HTTP_X_FORWARDED_SERVER", ""),
+        )
         if server:
-            environ['HTTP_HOST'] = server
+            environ["HTTP_HOST"] = server
 
-        scheme = environ.get('HTTP_X_SCHEME', '')
+        scheme = environ.get("HTTP_X_SCHEME", "")
 
         if scheme:
-            environ['wsgi.url_scheme'] = scheme
+            environ["wsgi.url_scheme"] = scheme
 
         if self.force_https:
-            environ['wsgi.url_scheme'] = 'https'
+            environ["wsgi.url_scheme"] = "https"
 
         return self.app(environ, start_response)
 
@@ -757,32 +775,31 @@ def real(obj):
 
 def parse_pkg_metadata(dist_name):
     try:
-        raw_metadata = get_distribution(dist_name).get_metadata('METADATA')
+        raw_metadata = get_distribution(dist_name).get_metadata("METADATA")
     except FileNotFoundError:
-        raw_metadata = get_distribution(dist_name).get_metadata('PKG-INFO')
+        raw_metadata = get_distribution(dist_name).get_metadata("PKG-INFO")
 
     metadata = {}
 
     # lets use the Parser from email to parse our metadata :)
     for key, value in message_from_string(raw_metadata).items():
-        metadata[key.replace('-', '_').lower()] = value
+        metadata[key.replace("-", "_").lower()] = value
 
     return metadata
 
 
 def anonymous_required(f):
-
     @wraps(f)
     def wrapper(*a, **k):
         if current_user is not None and current_user.is_authenticated:
-            return redirect_or_next(url_for('forum.index'))
+            return redirect_or_next(url_for("forum.index"))
         return f(*a, **k)
 
     return wrapper
 
 
 def enforce_recaptcha(limiter):
-    current_limit = getattr(g, 'view_rate_limit', None)
+    current_limit = getattr(g, "view_rate_limit", None)
     login_recaptcha = False
     if current_limit is not None:
         window_stats = limiter.limiter.get_window_stats(*current_limit)
@@ -792,7 +809,6 @@ def enforce_recaptcha(limiter):
 
 
 def registration_enabled(f):
-
     @wraps(f)
     def wrapper(*a, **k):
         if not flaskbb_config["REGISTRATION_ENABLED"]:
@@ -804,13 +820,13 @@ def registration_enabled(f):
 
 
 def requires_unactivated(f):
-
     @wraps(f)
     def wrapper(*a, **k):
         if current_user.is_active or not flaskbb_config["ACTIVATE_ACCOUNT"]:
             flash(_("This account is already activated."), "info")
-            return redirect(url_for('forum.index'))
+            return redirect(url_for("forum.index"))
         return f(*a, **k)
+
     return wrapper
 
 

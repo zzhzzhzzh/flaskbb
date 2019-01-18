@@ -9,9 +9,7 @@
     :license: BSD, see LICENSE for more details
 """
 
-from abc import abstractmethod
-
-from ..._compat import ABC
+from abc import ABC, abstractmethod
 
 
 class ResetPasswordService(ABC):

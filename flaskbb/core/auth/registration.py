@@ -10,11 +10,9 @@
     :license: BSD, see LICENSE for more details.
 """
 
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 
 import attr
-
-from ..._compat import ABC
 
 
 @attr.s(hash=True, cmp=False, repr=True, frozen=True)
@@ -23,6 +21,7 @@ class UserRegistrationInfo(object):
     User registration object, contains all relevant information for validating
     and creating a new user.
     """
+
     username = attr.ib()
     password = attr.ib(repr=False)
     email = attr.ib()

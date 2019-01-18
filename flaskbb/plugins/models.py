@@ -13,10 +13,9 @@ from flask import current_app
 from sqlalchemy import UniqueConstraint
 from sqlalchemy.orm.collections import attribute_mapped_collection
 
-from flaskbb._compat import itervalues
 from flaskbb.extensions import db
 from flaskbb.utils.database import CRUDMixin
-from flaskbb.utils.forms import generate_settings_form, SettingValueType
+from flaskbb.utils.forms import SettingValueType, generate_settings_form
 
 
 class PluginStore(CRUDMixin, db.Model):
@@ -28,20 +27,20 @@ class PluginStore(CRUDMixin, db.Model):
     # Extra attributes like, validation things (min, max length...)
     # For Select*Fields required: choices
     extra = db.Column(db.PickleType, nullable=True)
-    plugin_id = db.Column(db.Integer,
-                          db.ForeignKey("plugin_registry.id",
-                                        ondelete="CASCADE"))
+    plugin_id = db.Column(
+        db.Integer, db.ForeignKey("plugin_registry.id", ondelete="CASCADE")
+    )
 
     # Display stuff
     name = db.Column(db.Unicode(255), nullable=False)
     description = db.Column(db.Text, nullable=True)
 
     __table_args__ = (
-        UniqueConstraint('key', 'plugin_id', name='plugin_kv_uniq'),
+        UniqueConstraint("key", "plugin_id", name="plugin_kv_uniq"),
     )
 
     def __repr__(self):
-        return '<PluginSetting plugin={} key={} value={}>'.format(
+        return "<PluginSetting plugin={} key={} value={}>".format(
             self.plugin.name, self.key, self.value
         )
 
@@ -62,16 +61,16 @@ class PluginRegistry(CRUDMixin, db.Model):
     name = db.Column(db.Unicode(255), unique=True, nullable=False)
     enabled = db.Column(db.Boolean, default=True)
     values = db.relationship(
-        'PluginStore',
-        collection_class=attribute_mapped_collection('key'),
-        backref='plugin',
+        "PluginStore",
+        collection_class=attribute_mapped_collection("key"),
+        backref="plugin",
         cascade="all, delete-orphan",
     )
 
     @property
     def settings(self):
         """Returns a dict with contains all the settings in a plugin."""
-        return {kv.key: kv.value for kv in itervalues(self.values)}
+        return {kv.key: kv.value for kv in self.values.values()}
 
     @property
     def info(self):
@@ -102,7 +101,7 @@ class PluginRegistry(CRUDMixin, db.Model):
         """
         pluginstore = PluginStore.query.filter(
             PluginStore.plugin_id == self.id,
-            PluginStore.key.in_(settings.keys())
+            PluginStore.key.in_(settings.keys()),
         ).all()
 
         setting_list = []
@@ -129,15 +128,15 @@ class PluginRegistry(CRUDMixin, db.Model):
 
             pluginstore.key = key
             pluginstore.plugin = self
-            pluginstore.value = settings[key]['value']
-            pluginstore.value_type = settings[key]['value_type']
-            pluginstore.extra = settings[key]['extra']
-            pluginstore.name = settings[key]['name']
-            pluginstore.description = settings[key]['description']
+            pluginstore.value = settings[key]["value"]
+            pluginstore.value_type = settings[key]["value_type"]
+            pluginstore.extra = settings[key]["extra"]
+            pluginstore.name = settings[key]["name"]
+            pluginstore.description = settings[key]["description"]
             plugin_settings.append(pluginstore)
 
         db.session.add_all(plugin_settings)
         db.session.commit()
 
     def __repr__(self):
-        return '<Plugin name={} enabled={}>'.format(self.name, self.enabled)
+        return "<Plugin name={} enabled={}>".format(self.name, self.enabled)

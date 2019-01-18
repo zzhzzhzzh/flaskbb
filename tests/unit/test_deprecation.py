@@ -33,7 +33,7 @@ class TestDeprecation(object):
         assert recwarn[0].filename == __file__
         # assert on the next line is conditional on the position of the call
         # to default_deprecation please don't jiggle it around too much
-        assert recwarn[0].lineno == 28
+        assert recwarn[0].lineno == 29
         assert "only_a_drill is deprecated" in only_a_drill.__doc__
 
     def tests_emits_specialized_message(self, recwarn):
