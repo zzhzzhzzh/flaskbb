@@ -6,8 +6,6 @@
 [![License](https://img.shields.io/badge/license-BSD-blue.svg)](https://flaskbb.org)
 [![flaskbb@freenode](https://img.shields.io/badge/irc.freenode.net-%23flaskbb-blue.svg)](https://webchat.freenode.net/?channels=flaskbb)
 
-*FlaskBB is a Forum Software written in Python using the micro framework Flask.*
-
 Currently, following features are implemented:
 
 * Private Messages
